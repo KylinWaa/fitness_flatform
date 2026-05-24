@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}交易 - 健身打卡{% endblock %}
+{% block header_title %}交易记录{% endblock %}
+{% block content %}
+
+<div class="card">
+    <div class="card-header"><h3>公共账户</h3></div>
+    <div class="card-body text-center">
+        <div class="public-balance">{{ "%.0f"|format(public_balance) }} 元</div>
+        <div class="text-sm text-muted">公共账户余额（来自缺卡罚金）</div>
+    </div>
+</div>
+
+<div class="card mt-16">
+    <div class="card-header"><h3>我的交易</h3></div>
+    <div class="card-body p-0">
+        {% if transactions %}
+        <div class="record-list">
+            {% for tx in transactions %}
+            <div class="record-item">
+                <div class="record-date">
+                    <span class="record-day">{{ tx.created_at.strftime('%d') }}</span>
+                    <span class="record-month">{{ tx.created_at.strftime('%m月') }}</span>
+                </div>
+                <div class="record-info">
+                    <div>
+                        {% if tx.from_user_id == current_user.id %}
+                        转出 <i class="fas fa-arrow-right"></i>
+                        {% if tx.to_type == 'public' %}公共账户
+                        {% elif tx.to_user %}{{ tx.to_user.username }}
+                        {% endif %}
+                        {% else %}
+                        <i class="fas fa-arrow-left"></i> 来自 {{ tx.from_user.username }}
+                        {% endif %}
+                    </div>
+                    <small>{{ tx.reason }}</small>
+                </div>
+                <span class="amount-tag {{ 'amount-out' if tx.from_user_id == current_user.id else 'amount-in' }}">
+                    {{ '-' if tx.from_user_id == current_user.id else '+' }}{{ "%.0f"|format(tx.amount) }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">暂无交易记录</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}注册 - 健身打卡{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <div class="logo-icon"><i class="fas fa-dumbbell"></i></div>
+            <h2>创建账号</h2>
+            <p>铸币赶紧动动吧</p>
+        </div>
+        <form method="POST" class="auth-form">
+            <div class="form-group">
+                <label><i class="fas fa-user"></i></label>
+                <input type="text" name="username" placeholder="用户名 (2-20字符)" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-lock"></i></label>
+                <input type="password" name="password" placeholder="密码" required autocomplete="new-password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">注 册</button>
+        </form>
+        <div class="auth-link">
+            已有账号？<a href="{{ url_for('login') }}">立即登录</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
