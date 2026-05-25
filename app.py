@@ -22,6 +22,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'fitness-platform-secret-key-change-in-production'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fitness.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=36500)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=36500)
 
 BARK_ICON_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bark_icon.png')
 
@@ -144,7 +146,7 @@ def login():
         password = request.form.get('password', '')
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
-            login_user(user)
+            login_user(user, remember=True)
             next_page = request.args.get('next')
             return redirect(next_page or url_for('dashboard'))
         flash('用户名或密码错误')
@@ -171,7 +173,7 @@ def register():
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
-            login_user(user)
+            login_user(user, remember=True)
             return redirect(url_for('dashboard'))
     return render_template('register.html')
 
