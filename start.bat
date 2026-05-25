@@ -1,1 +1,0 @@
-"C:\anaconda\python.exe" J:\Projects\fitness_platform\app.py

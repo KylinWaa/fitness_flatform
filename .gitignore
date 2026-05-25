@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+instance/
+*.db
+.idea/
+.env
+*.bat
+bark_icon.jpg
