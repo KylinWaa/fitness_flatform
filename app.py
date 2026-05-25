@@ -96,11 +96,12 @@ def send_bark(user, title, body=''):
         return False
     try:
         encoded_title = urllib.parse.quote(title, safe='')
+        encoded_body = urllib.parse.quote(body, safe='') if body else ''
         encoded_icon = urllib.parse.quote(get_bark_icon_url(), safe='')
-        url = f'https://api.day.app/{user.bark_key}/{urllib.parse.quote("锻体！", safe="")}/{encoded_title}?icon={encoded_icon}'
+        url = f'https://api.day.app/{user.bark_key}/{encoded_title}'
         if body:
-            encoded_body = urllib.parse.quote(body, safe='')
-            url += f'&body={encoded_body}'
+            url += f'/{encoded_body}'
+        url += f'?icon={encoded_icon}'
         urllib.request.urlopen(url, timeout=5)
         return True
     except Exception:
@@ -530,10 +531,10 @@ def api_bark_bind():
 
     # 测试 Bark 连接
     try:
-        test_title = urllib.parse.quote('健身打卡测试', safe='')
+        test_title = urllib.parse.quote('绑定测试', safe='')
         test_body = urllib.parse.quote('Bark推送绑定成功', safe='')
         test_icon = urllib.parse.quote(get_bark_icon_url(), safe='')
-        test_url = f'https://api.day.app/{bark_key}/{urllib.parse.quote("绑定测试", safe="")}/{test_title}?icon={test_icon}&body={test_body}'
+        test_url = f'https://api.day.app/{bark_key}/{test_title}/{test_body}?icon={test_icon}'
         urllib.request.urlopen(test_url, timeout=10)
         current_user.bark_key = bark_key
         db.session.commit()
