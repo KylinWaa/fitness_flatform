@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}用户管理 - 健身打卡{% endblock %}
+{% block header_title %}用户管理{% endblock %}
+{% block content %}
+
+<div class="card">
+    <div class="card-header">
+        <h3>所有用户 ({{ users|length }})</h3>
+    </div>
+    <div class="card-body p-0">
+        {% if users %}
+        <div class="record-list">
+            {% for u in users %}
+            <div class="record-item" style="flex-wrap:wrap;">
+                <div class="rank-avatar" style="flex-shrink:0;">{{ u.username[0] }}</div>
+                <div class="record-info" style="min-width:100px;">
+                    <div>{{ u.username }}{% if u.is_admin %} <span class="badge badge-warning">管理员</span>{% endif %}</div>
+                    <small>余额 {{ "%.0f"|format(u.balance) }} 元 | 罚金 {{ "%.0f"|format(u.penalty_amount) }} 元 | 道具 {{ u.makeup_tokens }} 个</small>
+                </div>
+                <div style="display:flex;gap:6px;margin-top:6px;width:100%;">
+                    {% if u.id != current_user.id %}
+                    <button class="btn btn-outline btn-sm" style="flex:1;" onclick="editUser({{ u.id }})">编辑</button>
+                    {% if not u.is_admin %}
+                    <button class="btn btn-outline btn-sm" style="flex:1;" onclick="toggleAdmin({{ u.id }})">设为管理员</button>
+                    {% else %}
+                    <button class="btn btn-outline btn-sm" style="flex:1;color:var(--warning);" onclick="toggleAdmin({{ u.id }})">取消管理员</button>
+                    {% endif %}
+                    <button class="btn btn-outline btn-sm" style="flex:1;color:var(--danger);" onclick="resetPassword({{ u.id }})">重置密码</button>
+                    <button class="btn btn-outline btn-sm" style="flex:1;color:var(--danger);" onclick="deleteUser({{ u.id }}, '{{ u.username }}')">删除</button>
+                    <button class="btn btn-outline btn-sm" style="flex:1;color:var(--primary);" onclick="resetSchedule({{ u.id }}, '{{ u.username }}')">重置计划</button>
+                    {% else %}
+                    <span class="text-sm text-muted" style="flex:1;text-align:center;">当前用户</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">暂无用户</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+async function deleteUser(id, name) {
+    if (!confirm('确定要删除用户 "' + name + '" 吗？此操作将同时删除其所有打卡记录和交易记录，不可恢复！')) return;
+    try {
+        const res = await fetch('/admin/user/' + id, { method: 'DELETE', headers: {'Content-Type': 'application/json'} });
+        const data = await res.json();
+        if (data.ok) { location.reload(); } else { alert(data.error || '删除失败'); }
+    } catch (e) { alert('网络错误'); }
+}
+
+async function toggleAdmin(id) {
+    try {
+        const res = await fetch('/admin/user/' + id + '/toggle-admin', { method: 'POST', headers: {'Content-Type': 'application/json'} });
+        const data = await res.json();
+        if (data.ok) { location.reload(); } else { alert(data.error || '操作失败'); }
+    } catch (e) { alert('网络错误'); }
+}
+
+async function resetPassword(id) {
+    if (!confirm('确定要将此用户的密码重置为 "123456" 吗？')) return;
+    try {
+        const res = await fetch('/admin/user/' + id + '/reset-password', { method: 'POST', headers: {'Content-Type': 'application/json'} });
+        const data = await res.json();
+        if (data.ok) { alert('密码已重置为 123456'); } else { alert(data.error || '操作失败'); }
+    } catch (e) { alert('网络错误'); }
+}
+
+async function editUser(id) {
+    const balance = prompt('新余额：');
+    if (balance === null) return;
+    const penalty = prompt('新缺卡罚金：');
+    if (penalty === null) return;
+    try {
+        const res = await fetch('/admin/user/' + id + '/edit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ balance: parseFloat(balance), penalty: parseFloat(penalty) })
+        });
+        const data = await res.json();
+        if (data.ok) { location.reload(); } else { alert(data.error || '操作失败'); }
+    } catch (e) { alert('网络错误'); }
+}
+
+async function resetSchedule(id, name) {
+    if (!confirm('确定要重置用户 "' + name + '" 的健身计划吗？\n\n此操作将清空其当前计划并解除本月修改限制。')) return;
+    try {
+        const res = await fetch('/admin/user/' + id + '/reset-schedule', { method: 'POST', headers: {'Content-Type': 'application/json'} });
+        const data = await res.json();
+        if (data.ok) { alert('计划已重置'); location.reload(); } else { alert(data.error || '操作失败'); }
+    } catch (e) { alert('网络错误'); }
+}
+</script>
+{% endblock %}

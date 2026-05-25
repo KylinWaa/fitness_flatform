@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}首页 - 健身打卡{% endblock %}
+{% block header_title %}首页{% endblock %}
+{% block content %}
+
+<div class="stats-grid">
+    <div class="stat-card accent-blue">
+        <div class="stat-value">{{ streak }}</div>
+        <div class="stat-label">连续打卡</div>
+    </div>
+    <div class="stat-card accent-green">
+        <div class="stat-value">{{ total_completed }}</div>
+        <div class="stat-label">累计完成</div>
+    </div>
+    <div class="stat-card accent-red">
+        <div class="stat-value">{{ total_missed }}</div>
+        <div class="stat-label">累计缺卡</div>
+    </div>
+    <div class="stat-card accent-purple">
+        <div class="stat-value">{{ "%.0f"|format(current_user.balance) }}</div>
+        <div class="stat-label">账户余额</div>
+    </div>
+    <div class="stat-card accent-gold">
+        <div class="stat-value">{{ current_user.makeup_tokens }}</div>
+        <div class="stat-label">补签道具</div>
+    </div>
+    <div class="stat-card accent-teal">
+        <div class="stat-value">{{ "%.0f"|format(public_balance) }}</div>
+        <div class="stat-label">公共账户</div>
+    </div>
+</div>
+
+<div class="card today-card">
+    <div class="card-header">
+        <h3>今日状态 <span class="badge {{ 'badge-success' if is_scheduled else 'badge-muted' }}">{{ '计划日' if is_scheduled else '休息日' }}</span></h3>
+    </div>
+    <div class="card-body">
+        {% if today_checkin %}
+            {% if today_checkin.status == 'completed' %}
+            <div class="checkin-status done">
+                <i class="fas fa-check-circle"></i>
+                <span>已完成打卡</span>
+                <small>{{ today_checkin.start_time.strftime('%H:%M') }} - {{ today_checkin.end_time.strftime('%H:%M') if today_checkin.end_time else '进行中' }}</small>
+            </div>
+            {% elif today_checkin.status == 'active' %}
+            <div class="checkin-status active">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>打卡进行中</span>
+                <small>开始于 {{ today_checkin.start_time.strftime('%H:%M') }}</small>
+            </div>
+            {% elif today_checkin.status == 'missed' %}
+            <div class="checkin-status missed">
+                <i class="fas fa-times-circle"></i>
+                <span>今日缺卡</span>
+                <small>已自动扣除 {{ "%.0f"|format(current_user.penalty_amount) }} 元</small>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="checkin-status idle">
+                <i class="fas fa-circle"></i>
+                <span>尚未打卡</span>
+                {% if is_scheduled %}
+                <small>今天是计划日，记得打卡哦</small>
+                {% else %}
+                <small>今天是休息日，放松一下</small>
+                {% endif %}
+            </div>
+        {% endif %}
+        <a href="{{ url_for('checkin_page') }}" class="btn {{ 'btn-outline' if today_checkin else 'btn-primary' }} btn-block mt-12">
+            {{ '查看详情' if today_checkin else '去打卡' }}
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3>近期记录</h3>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_checkins %}
+        <div class="record-list">
+            {% for r in recent_checkins %}
+            <div class="record-item">
+                <div class="record-date">
+                    <span class="record-day">{{ r.check_date.strftime('%d') }}</span>
+                    <span class="record-month">{{ r.check_date.strftime('%m月') }}</span>
+                </div>
+                <div class="record-info">
+                    <div>{{ weekday_names[r.check_date.weekday()] }}</div>
+                    <small>{{ r.start_time.strftime('%H:%M') if r.start_time else '--' }} - {{ r.end_time.strftime('%H:%M') if r.end_time else '--' }}</small>
+                </div>
+                <span class="status-tag {{ 'tag-success' if r.status == 'completed' else 'tag-danger' }}">{{ '完成' if r.status == 'completed' else '缺卡' if r.status == 'missed' else '进行中' }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">暂无打卡记录</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

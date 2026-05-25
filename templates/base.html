@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>{% block title %}健身打卡{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        {% if current_user.is_authenticated %}
+        <header class="app-header">
+            <h1 class="app-title">{% block header_title %}健身打卡{% endblock %}</h1>
+            <div class="header-right">
+                {% if current_user.is_admin %}
+                <a href="{{ url_for('admin_page') }}" class="header-public" style="background:#ede9fe;color:var(--purple);">
+                    <i class="fas fa-cog"></i>
+                </a>
+                {% endif %}
+                <span class="header-public" title="公共账户">
+                    <i class="fas fa-piggy-bank"></i> {{ "%.0f"|format(global_public_balance) }}
+                </span>
+                <div class="header-balance">
+                    <i class="fas fa-coins"></i> {{ "%.0f"|format(current_user.balance) }}
+                </div>
+            </div>
+        </header>
+        {% endif %}
+
+        <main class="app-main">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+        {% if current_user.is_authenticated %}
+        <nav class="bottom-nav">
+            <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if request.endpoint == 'dashboard' }}">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </a>
+            <a href="{{ url_for('checkin_page') }}" class="nav-item {{ 'active' if request.endpoint == 'checkin_page' }}">
+                <i class="fas fa-check-circle"></i>
+                <span>打卡</span>
+            </a>
+            <a href="{{ url_for('rankings') }}" class="nav-item {{ 'active' if request.endpoint == 'rankings' }}">
+                <i class="fas fa-trophy"></i>
+                <span>排行</span>
+            </a>
+            <a href="{{ url_for('schedule_page') }}" class="nav-item {{ 'active' if request.endpoint == 'schedule_page' }}">
+                <i class="fas fa-user"></i>
+                <span>我的</span>
+            </a>
+        </nav>
+        {% endif %}
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

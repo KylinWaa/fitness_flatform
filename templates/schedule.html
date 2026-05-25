@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}计划 - 健身打卡{% endblock %}
+{% block header_title %}我的{% endblock %}
+{% block content %}
+
+<div class="card">
+    <div class="card-header">
+        <h3>账户信息</h3>
+    </div>
+    <div class="card-body">
+        <div class="profile-info">
+            <div class="profile-avatar">{{ current_user.username[0] }}</div>
+            <div class="profile-name">{{ current_user.username }}</div>
+            <div class="profile-balance">
+                <div class="balance-item">
+                    <span class="balance-label">个人余额</span>
+                    <span class="balance-value">{{ "%.0f"|format(current_user.balance) }} 元</span>
+                </div>
+                <div class="balance-item">
+                    <span class="balance-label">缺卡罚金</span>
+                    <span class="balance-value">{{ "%.0f"|format(current_user.penalty_amount) }} 元/次</span>
+                </div>
+                <div class="balance-item">
+                    <span class="balance-label">补签道具</span>
+                    <span class="balance-value">{{ current_user.makeup_tokens }} 个</span>
+                </div>
+            </div>
+            <div class="public-balance-banner mt-12">
+                <i class="fas fa-piggy-bank"></i> 公共账户余额：<strong>{{ "%.0f"|format(global_public_balance) }} 元</strong>
+            </div>
+        </div>
+        <div class="profile-actions">
+            <a href="{{ url_for('transactions') }}" class="btn btn-outline btn-sm">扣钱记录</a>
+            <a href="{{ url_for('records_page') }}" class="btn btn-outline btn-sm">全部记录</a>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline btn-sm btn-danger-outline">退出登录</a>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-12">
+    <div class="card-header">
+        <h3>Bark 推送绑定</h3>
+    </div>
+    <div class="card-body">
+        <p class="text-sm text-muted mb-8">绑定 Bark 后可接收打卡提醒和扣款通知。获取方式：App Store 搜索 "Bark" 安装后复制 API Key。</p>
+        <form id="barkForm">
+            <div class="form-group">
+                <label><i class="fas fa-bell"></i></label>
+                <input type="text" id="barkKey" value="{{ current_user.bark_key or '' }}" placeholder="输入 Bark API Key">
+            </div>
+            <div class="profile-actions">
+                <button type="submit" class="btn btn-primary btn-sm">绑定</button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="unbindBark()">解绑</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-16">
+    <div class="card-header">
+        <h3>我的计划
+            {% if not can_modify %}<span class="text-sm text-muted">（本月已修改）</span>{% endif %}
+        </h3>
+        {% if last_modified %}
+        <small class="text-muted">上次修改：{{ last_modified.strftime('%Y-%m-%d %H:%M') }}</small>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if not can_modify %}
+        <div class="alert alert-info mb-12">
+            <i class="fas fa-info-circle"></i> 本月已修改过计划，下个月可再次修改。
+        </div>
+        {% endif %}
+        <form id="scheduleForm">
+            <div class="form-group">
+                <label>计划名称</label>
+                <input type="text" id="scheduleName" class="form-input" value="{% if schedules %}{{ schedules[0].name }}{% else %}我的计划{% endif %}" placeholder="计划名称" {% if not can_modify %}disabled{% endif %}>
+            </div>
+            <div class="weekday-picker" id="weekdayPicker">
+                {% for i in range(7) %}
+                <label class="weekday-item {% if not can_modify %}disabled{% endif %} {% if schedules and schedules[0] and i in schedules[0].get_days_list() %}selected{% endif %}" data-day="{{ i }}">
+                    <input type="checkbox" value="{{ i }}" {% if schedules and schedules[0] and i in schedules[0].get_days_list() %}checked{% endif %} {% if not can_modify %}disabled{% endif %} hidden>
+                    <span>{{ weekday_names[i] }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-primary btn-block mt-16" {% if not can_modify %}disabled{% endif %}>保存计划</button>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-16">
+    <div class="card-header">
+        <h3>所有人的计划</h3>
+    </div>
+    <div class="card-body p-0">
+        {% if all_schedules %}
+        <div class="record-list">
+            {% for s in all_schedules %}
+            <div class="record-item">
+                <div class="record-date">
+                    <span class="record-day" style="font-size:18px">{{ s.user.username[0] }}</span>
+                </div>
+                <div class="record-info">
+                    <div>{{ s.user.username }} - {{ s.name }}</div>
+                    <small>
+                        {% for d in s.get_days_list() %}{{ weekday_names[d][1] }} {% endfor %}
+                    </small>
+                </div>
+                <span class="status-tag tag-info">活跃</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">还没有人设置计划</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('scheduleForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    {% if not can_modify %}
+    alert('本月已修改过计划，每月只能修改一次');
+    return;
+    {% endif %}
+    const checked = document.querySelectorAll('#weekdayPicker input:checked');
+    const days = Array.from(checked).map(cb => parseInt(cb.value));
+    const name = document.getElementById('scheduleName').value || '我的计划';
+
+    if (days.length === 0) { alert('请至少选择一天'); return; }
+
+    try {
+        const res = await fetch('/api/schedule/update', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ days, name })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            location.reload();
+        } else {
+            alert(data.error || '保存失败');
+        }
+    } catch (e) {
+        alert('网络错误');
+    }
+});
+
+document.getElementById('barkForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const key = document.getElementById('barkKey').value.trim();
+    if (!key) { alert('请输入 Bark API Key'); return; }
+    try {
+        const res = await fetch('/api/bark/bind', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ bark_key: key })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            alert(data.message);
+        } else {
+            alert(data.error || '绑定失败');
+        }
+    } catch (e) {
+        alert('网络错误');
+    }
+});
+
+async function unbindBark() {
+    if (!confirm('确定要解绑 Bark 推送吗？')) return;
+    try {
+        const res = await fetch('/api/bark/bind', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ bark_key: '' })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            document.getElementById('barkKey').value = '';
+            alert('已解绑');
+        }
+    } catch (e) {
+        alert('网络错误');
+    }
+}
+
+document.querySelectorAll('.weekday-item').forEach(item => {
+    item.addEventListener('click', function() {
+        const cb = this.querySelector('input');
+        cb.checked = !cb.checked;
+        this.classList.toggle('selected', cb.checked);
+    });
+});
+</script>
+{% endblock %}

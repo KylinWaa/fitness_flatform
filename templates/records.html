@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}全部记录 - 健身打卡{% endblock %}
+{% block header_title %}全部打卡记录{% endblock %}
+{% block content %}
+
+<div class="card">
+    <div class="card-body" style="padding:12px 16px;">
+        <form method="GET" style="display:flex; gap:8px; flex-wrap:wrap;">
+            <select name="user_id" class="form-input" style="flex:1; min-width:100px;">
+                <option value="">所有用户</option>
+                {% for u in users %}
+                <option value="{{ u.id }}" {% if user_filter == u.id %}selected{% endif %}>{{ u.username }}</option>
+                {% endfor %}
+            </select>
+            <select name="status" class="form-input" style="flex:1; min-width:100px;">
+                <option value="">所有状态</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>已完成</option>
+                <option value="missed" {% if status_filter == 'missed' %}selected{% endif %}>缺卡</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>进行中</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">筛选</button>
+        </form>
+    </div>
+    <div class="card-body" style="padding:4px 16px 8px;">
+        <span class="text-sm text-muted">共 {{ total_count }} 条记录</span>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        {% if records %}
+        <div class="record-list">
+            {% for r in records %}
+            <div class="record-item">
+                <div class="record-date">
+                    <span class="record-day">{{ r.check_date.strftime('%d') }}</span>
+                    <span class="record-month">{{ r.check_date.strftime('%m月') }}</span>
+                </div>
+                <div class="record-info">
+                    <div>
+                        <strong>{{ r.user.username }}</strong>
+                        <span class="text-muted"> {{ weekday_names[r.check_date.weekday()] }}</span>
+                    </div>
+                    <small>
+                        {{ r.start_time.strftime('%H:%M') if r.start_time else '--' }}
+                        - {{ r.end_time.strftime('%H:%M') if r.end_time else '--' }}
+                        {% if r.duration %}({{ (r.duration // 60) }}分钟){% endif %}
+                    </small>
+                </div>
+                <span class="status-tag {{ 'tag-success' if r.status == 'completed' else 'tag-danger' if r.status == 'missed' else 'tag-warning' }}">
+                    {{ '完成' if r.status == 'completed' else '缺卡' if r.status == 'missed' else '进行中' }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">暂无记录</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination mt-12">
+    {% if page > 1 %}
+    <a href="{{ url_for('records_page', page=page-1, user_id=user_filter, status=status_filter) }}" class="btn btn-outline btn-sm">上一页</a>
+    {% endif %}
+    <span class="text-sm text-muted">{{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="{{ url_for('records_page', page=page+1, user_id=user_filter, status=status_filter) }}" class="btn btn-outline btn-sm">下一页</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

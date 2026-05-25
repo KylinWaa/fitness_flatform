@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}对决 - 健身打卡{% endblock %}
+{% block header_title %}挑战对决{% endblock %}
+{% block content %}
+
+<div class="card">
+    <div class="card-header"><h3>选择对战选手</h3></div>
+    <div class="card-body">
+        <form method="GET" class="battle-form">
+            <div class="battle-select-row">
+                <select name="a" class="form-input" required>
+                    <option value="">选择选手A</option>
+                    {% for u in users %}
+                    <option value="{{ u.id }}" {% if user_a and user_a.id == u.id %}selected{% endif %}>{{ u.username }}</option>
+                    {% endfor %}
+                </select>
+                <span class="vs-text">VS</span>
+                <select name="b" class="form-input" required>
+                    <option value="">选择选手B</option>
+                    {% for u in users %}
+                    <option value="{{ u.id }}" {% if user_b and user_b.id == u.id %}selected{% endif %}>{{ u.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block mt-12">开始对决</button>
+        </form>
+    </div>
+</div>
+
+{% if stats_a and stats_b %}
+<div class="card mt-16">
+    <div class="card-header"><h3>对决结果</h3></div>
+    <div class="card-body">
+        <div class="battle-result">
+            <div class="battle-side {{ 'winner' if stats_a.total >= stats_b.total }}">
+                <div class="battle-avatar" style="background: linear-gradient(135deg, #4f46e5, #7c3aed);">{{ user_a.username[0] }}</div>
+                <div class="battle-name">{{ user_a.username }}</div>
+                {% if stats_a.total >= stats_b.total %}<div class="winner-badge">WINNER</div>{% endif %}
+                <div class="battle-stats">
+                    <div class="battle-stat"><span>打卡率</span><strong>{{ stats_a.rate }}%</strong></div>
+                    <div class="battle-stat"><span>累计</span><strong>{{ stats_a.total }}</strong></div>
+                    <div class="battle-stat"><span>缺卡</span><strong>{{ stats_a.missed }}</strong></div>
+                    <div class="battle-stat"><span>连续</span><strong>{{ stats_a.streak }}天</strong></div>
+                    <div class="battle-stat"><span>本月</span><strong>{{ stats_a.monthly }}</strong></div>
+                    <div class="battle-stat"><span>余额</span><strong>{{ "%.0f"|format(stats_a.balance) }}</strong></div>
+                </div>
+            </div>
+            <div class="battle-divider">
+                <div class="vs-badge">VS</div>
+            </div>
+            <div class="battle-side {{ 'winner' if stats_b.total >= stats_a.total }}">
+                <div class="battle-avatar" style="background: linear-gradient(135deg, #f59e0b, #ef4444);">{{ user_b.username[0] }}</div>
+                <div class="battle-name">{{ user_b.username }}</div>
+                {% if stats_b.total >= stats_a.total %}<div class="winner-badge">WINNER</div>{% endif %}
+                <div class="battle-stats">
+                    <div class="battle-stat"><span>打卡率</span><strong>{{ stats_b.rate }}%</strong></div>
+                    <div class="battle-stat"><span>累计</span><strong>{{ stats_b.total }}</strong></div>
+                    <div class="battle-stat"><span>缺卡</span><strong>{{ stats_b.missed }}</strong></div>
+                    <div class="battle-stat"><span>连续</span><strong>{{ stats_b.streak }}天</strong></div>
+                    <div class="battle-stat"><span>本月</span><strong>{{ stats_b.monthly }}</strong></div>
+                    <div class="battle-stat"><span>余额</span><strong>{{ "%.0f"|format(stats_b.balance) }}</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

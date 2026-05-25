@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}排行 - 健身打卡{% endblock %}
+{% block header_title %}排行榜{% endblock %}
+{% block content %}
+
+<div class="card">
+    <div class="card-header">
+        <h3>巅峰排名</h3>
+        <div style="display:flex; gap:8px;">
+            <a href="{{ url_for('battle') }}" class="btn btn-outline btn-sm">挑战对决</a>
+            <a href="{{ url_for('records_page') }}" class="btn btn-primary btn-sm">全部记录</a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if ranking_data %}
+        <div class="rank-list">
+            {% for item in ranking_data %}
+            <div class="rank-item {{ 'rank-top' if loop.index <= 3 }}">
+                <div class="rank-num">
+                    {% if loop.index == 1 %}<i class="fas fa-crown" style="color:#f59e0b"></i>
+                    {% elif loop.index == 2 %}<i class="fas fa-medal" style="color:#94a3b8"></i>
+                    {% elif loop.index == 3 %}<i class="fas fa-medal" style="color:#d97706"></i>
+                    {% else %}{{ loop.index }}{% endif %}
+                </div>
+                <div class="rank-user">
+                    <div class="rank-avatar">{{ item.user.username[0] }}</div>
+                    <div>
+                        <div>{{ item.user.username }}</div>
+                        <small>打卡率 {{ item.rate }}% | 连续 {{ item.streak }}天</small>
+                    </div>
+                </div>
+                <div class="rank-stats">
+                    <div>{{ item.total }}<small>总</small></div>
+                    <div>{{ item.missed }}<small>缺</small></div>
+                    <div>{{ item.monthly }}<small>月</small></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">暂无数据</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mt-16">
+    <div class="card-header"><h3>数据统计</h3></div>
+    <div class="card-body">
+        <div class="simple-table">
+            <table>
+                <thead>
+                    <tr><th>用户</th><th>打卡率</th><th>连续</th><th>累计</th><th>本月</th><th>余额</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in ranking_data %}
+                    <tr>
+                        <td>{{ item.user.username }}</td>
+                        <td><span class="badge {{ 'badge-success' if item.rate >= 80 else 'badge-warning' if item.rate >= 50 else 'badge-danger' }}">{{ item.rate }}%</span></td>
+                        <td>{{ item.streak }}天</td>
+                        <td>{{ item.total }}</td>
+                        <td>{{ item.monthly }}</td>
+                        <td>{{ "%.0f"|format(item.user.balance) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
