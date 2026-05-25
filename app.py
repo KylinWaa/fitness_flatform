@@ -375,10 +375,10 @@ def transactions():
 def api_checkin_start():
     today = get_today()
     existing = CheckIn.query.filter_by(
-        user_id=current_user.id, check_date=today, status='active'
+        user_id=current_user.id, check_date=today
     ).first()
     if existing:
-        return jsonify({'error': '今日已有进行中的打卡', 'checkin_id': existing.id}), 400
+        return jsonify({'error': '今日已打过卡', 'checkin_id': existing.id, 'status': existing.status}), 400
 
     active_schedule = Schedule.query.filter_by(user_id=current_user.id, is_active=True).first()
     is_scheduled = active_schedule.is_scheduled_day(today) if active_schedule else False
@@ -447,10 +447,10 @@ def api_public_checkin_start(username):
 
     today = get_today()
     existing = CheckIn.query.filter_by(
-        user_id=user.id, check_date=today, status='active'
+        user_id=user.id, check_date=today
     ).first()
     if existing:
-        return jsonify({'error': '今日已有进行中的打卡', 'checkin_id': existing.id}), 400
+        return jsonify({'error': '今日已打过卡', 'checkin_id': existing.id, 'status': existing.status}), 400
 
     active_schedule = Schedule.query.filter_by(user_id=user.id, is_active=True).first()
     is_scheduled = active_schedule.is_scheduled_day(today) if active_schedule else False
